@@ -469,7 +469,6 @@ GameObject:
   - component: {fileID: 1757478324}
   - component: {fileID: 1757478323}
   - component: {fileID: 1757478327}
-  - component: {fileID: 1757478328}
   m_Layer: 0
   m_Name: ChunkRederer
   m_TagString: Untagged
@@ -490,7 +489,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   xSize: 16
-  ySize: 256
+  ySize: 225
   zSize: 16
 --- !u!23 &1757478324
 MeshRenderer:
@@ -540,7 +539,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1757478322}
-  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 0}
 --- !u!4 &1757478326
 Transform:
   m_ObjectHideFlags: 0
@@ -569,19 +568,3 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
---- !u!54 &1757478328
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1757478322}
-  serializedVersion: 2
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_UseGravity: 1
-  m_IsKinematic: 1
-  m_Interpolate: 0
-  m_Constraints: 0
-  m_CollisionDetection: 0
