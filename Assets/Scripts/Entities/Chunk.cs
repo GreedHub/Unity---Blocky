@@ -1,18 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using Unity.Entities;
 
-public class Chunk : MonoBehaviour
-{
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+public struct Block : IComponentData {
+    public Block block;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

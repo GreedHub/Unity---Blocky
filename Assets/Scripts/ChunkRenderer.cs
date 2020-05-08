@@ -13,15 +13,17 @@ public class ChunkRenderer : MonoBehaviour
     int[] triangles;
     Block[,,] blocks;
     float offset;
-    public int xSize = 16;
-    public int ySize = 1024;
-    public int zSize = 16;
-
+    int xSize = 16;
+    int ySize = 225;
+    int zSize = 16;
+    FastNoise noise = new FastNoise();
+    float[,] heightMap = new float[xSize,zSize];
+    float[,] heightMap2 = new float[xSize,zSize];
 
     // Start is called before the first frame update
     void Start()
     {
-        offset = Random.Range(0f,99999999999f);
+        offset = Random.Range(0f,10f);
 
         mesh = new Mesh();
 
@@ -32,6 +34,7 @@ public class ChunkRenderer : MonoBehaviour
         StartCoroutine(CreateShape());
 
         UpdateMesh();
+        
     }
     
     IEnumerator CreateShape(){        
@@ -50,16 +53,23 @@ public class ChunkRenderer : MonoBehaviour
 
     void GenerateBlocks(int _xSize,int _ySize,int _zSize){
 
+        
+
         for(int x=0; x< _xSize; x++){
             
             for(int y=0; y< _ySize; y++){
                 
                 for(int z=0; z< _zSize; z++){
                     
-                    blocks[x,y,z] = new Block();
-                    float xCoord = (float) x / xSize;
-                    float zCoord = (float) z / zSize;                                        
-                    float dirtHeight =  Mathf.Floor(Mathf.PerlinNoise(xCoord,zCoord)*ySize);
+                    blocks[x,y,z] = new Block();   
+
+                    float simplex1 = noise.GetSimplex(x*.8f, z*.8f)*10;
+                    float simplex2 = noise.GetSimplex(x * 3f, z * 3f) * 10*(noise.GetSimplex(x*.3f, z*.3f)+.5f);
+                    float heightMap = simplex1 + simplex2;
+                    float dirtHeight = ySize * .5f + heightMap;                        
+
+                   // Debug.Log($"Heightmap: {heightMap} | dirtHeight: {dirtHeight}");
+
                     blocks[x,y,z].material = (y > dirtHeight) ?  "air" : "dirt";
 
                 }

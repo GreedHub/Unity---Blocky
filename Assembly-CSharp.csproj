@@ -36,10 +36,11 @@
     <ImplicitlyExpandDesignTimeFacades>false</ImplicitlyExpandDesignTimeFacades>
   </PropertyGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\Block.cs" />
      <Compile Include="Assets\Scripts\ChunkRenderer.cs" />
      <Compile Include="Assets\Scripts\CubeRender.cs" />
+     <Compile Include="Assets\Scripts\Entities\Block.cs" />
      <Compile Include="Assets\Scripts\Entities\Chunk.cs" />
+     <Compile Include="Assets\Scripts\FastNoise.cs" />
     <Reference Include="UnityEngine">
         <HintPath>C:/Program Files/Unity/Hub/Editor/2020.1.0b7/Editor/Data/Managed/UnityEngine/UnityEngine.dll</HintPath>
     </Reference>
