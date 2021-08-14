@@ -10,5 +10,11 @@ public struct ChunkComponent : IComponentData {
     public int xSize;
     public int ySize;
     public int zSize;
+    public Biomes biome;
+    public bool hasToRender;
 
+}
+
+public enum Biomes{
+    plains
 }

@@ -467,9 +467,9 @@ Transform:
   m_Children:
   - {fileID: 963194228}
   m_Father: {fileID: 0}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &7854806864682912116
+--- !u!1001 &2030322704
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -480,18 +480,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: ChunkRedererECS
       objectReference: {fileID: 0}
-    - target: {fileID: 7854806865256668108, guid: 9c0d5ffb3f5caab4287b16e898769417, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7854806865256668108, guid: 9c0d5ffb3f5caab4287b16e898769417, type: 3}
-      propertyPath: ySize
-      value: 225
-      objectReference: {fileID: 0}
-    - target: {fileID: 7854806865256668108, guid: 9c0d5ffb3f5caab4287b16e898769417, type: 3}
-      propertyPath: material
-      value: 
-      objectReference: {fileID: 2100000, guid: 8df7f6192bf7ecb4aaa800c5de21d09e, type: 2}
     - target: {fileID: 7854806865256668109, guid: 9c0d5ffb3f5caab4287b16e898769417, type: 3}
       propertyPath: m_LocalPosition.x
       value: 11.768861
@@ -522,7 +510,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7854806865256668109, guid: 9c0d5ffb3f5caab4287b16e898769417, type: 3}
       propertyPath: m_RootOrder
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 7854806865256668109, guid: 9c0d5ffb3f5caab4287b16e898769417, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

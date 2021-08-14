@@ -6,6 +6,7 @@ using Unity.Rendering;
 using Unity.Collections;
 using Unity.Transforms;
 using Unity.Mathematics;
+using System;
 
 public class Chunk : MonoBehaviour {
     
@@ -14,6 +15,9 @@ public class Chunk : MonoBehaviour {
     [SerializeField] private int xSize = 16;
     [SerializeField] private int ySize = 225;
     [SerializeField] private int zSize = 16;
+
+    [SerializeField] public int xCoord = 0;
+    [SerializeField] public int zCoord = 0;
 
     FastNoise noise = new FastNoise();
     float[,] heightMap ;
@@ -26,179 +30,126 @@ public class Chunk : MonoBehaviour {
         EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
         EntityArchetype entityArchetype = entityManager.CreateArchetype(
-            typeof(Chunk),
             typeof(Translation),
+            typeof(ChunkComponent),
+            typeof(Heightmap),
             typeof(RenderMesh),
             typeof(LocalToWorld),
-            typeof(RenderBounds),
-            typeof(NativeArray<Vector3>)
+            typeof(RenderBounds)
         );
 
         Entity entity = entityManager.CreateEntity(entityArchetype);
 
-        //NativeArray<Entity> entityArray = new NativeArray<Entity>(1,Allocator.Temp);
+        DynamicBuffer<Block> dynamicBuffer =  entityManager.AddBuffer<Block>(entity);
 
-        //entityManager.CreateEntity(entityArchetype, entityArray);
+        for (int x = 0; x < xSize; x++)
+            for (int y = 0; y < ySize; y++)
+                for (int z = 0; z < zSize; z++)
+                {
 
-        DynamicBuffer<Block> dynamicBuffer =  entityManager.AddBuffer<Block>(entity);        
-
-        NativeArray<Vector3> vertex = new NativeArray<Vector3>();        
-
-        for(int x=0; x< xSize ; x++) 
-            for(int y=0; y< ySize; y++)
-                for(int z=0; z< zSize; z++){                    
-
-                    float simplex1 = noise.GetSimplex(x*.8f, z*.8f)*10;
-                    float simplex2 = noise.GetSimplex(x * 3f, z * 3f) * 10*(noise.GetSimplex(x*.3f, z*.3f)+.5f);
-                    float heightMap = simplex1 + simplex2;
-                    float dirtHeight = ySize * .5f + heightMap;
-
-                    dynamicBuffer.Add(new Block{
-                        xCoord = x,
-                        yCoord = y,
-                        zCoord = z,
-                        material = y > dirtHeight ?  BlockMaterials.air : BlockMaterials.dirt
+                    dynamicBuffer.Add(new Block
+                    {
+                        material = GetBlockType( x,  y,  z)
                     });
 
                 }
 
-        for(int x=0; x<= xSize ; x++) 
-            for(int y=0; y<= ySize; y++)
-                for(int z=0; z<= zSize; z++){
-                    vertex[x*ySize + y*zSize + z] = new Vector3(x,y,z);
+        DynamicBuffer<Block> blockBuffer = dynamicBuffer.Reinterpret<Block>();
+
+        DynamicBuffer<VertexBuffer> dynamicVertexBuffer = entityManager.AddBuffer<VertexBuffer>(entity);
+
+        for (int x = 0; x <= xSize; x++)
+            for (int y = 0; y <= ySize; y++)
+                for (int z = 0; z <= zSize; z++)
+                {
+                    dynamicVertexBuffer.Add(new VertexBuffer{ vertex = new Vector3(x, y, z)});
                 }
 
-        entityManager.SetComponentData(entity, new ChunkComponent{
+        entityManager.SetComponentData(entity, new ChunkComponent
+        {
             xSize = xSize,
             ySize = ySize,
-            zSize = zSize
+            zSize = zSize,
+            biome = Biomes.plains,
+            hasToRender = true
+
         });
 
-        entityManager.SetComponentData(entity, new NativeArray<Vector3>.CopyFrom(vertex));
-    
+        entityManager.SetSharedComponentData(entity, new RenderMesh{
+                    mesh = mesh,
+                    material = material
+                });
+
+
     }
 
-    void UpdateMesh(Vector3[] vertices, int[] triangles){
-        mesh.Clear();
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-    }
+    BlockMaterials GetBlockType(int x, int y, int z)
+    {
+        /*if(y < 33)
+            return BlockType.Dirt;
+        else
+            return BlockType.Air;*/
 
-    List<int> GenerateCubesByTriangles(int _xSize, int _ySize, int _zSize, DynamicBuffer<Block> blockBuffer){
-        List<int> _triangles = new List<int>();
-
-        int vert = 0;
         
-        for(int x=0; x< _xSize ; x++){
-  
-            for(int y=0; y< _ySize; y++){
-                
-                for(int z=0; z< _zSize; z++){        
-                    
-                    if(blockBuffer[x*ySize+y*zSize+z].material == BlockMaterials.air) {vert++; continue;}; 
-  
-                    int[] formulas = new int[]{
-                        vert + 0,
-                        vert + 1 ,
-                        vert + (_zSize + 1),
-                        vert + (_zSize + 1) + 1,
-                        vert + (_zSize + 1) * (_ySize + 1),
-                        vert + (_zSize + 1) * (_ySize + 1) + 1,
-                        vert + (_zSize + 1) * (_ySize + 1) + (_zSize + 1)  ,
-                        vert + (_zSize + 1) * (_ySize + 1) + (_zSize + 1) + 1
-                    };
 
-                    /* FRENTE */
-                    if((x==0 &&blockBuffer[x*ySize+y*zSize+z].material != BlockMaterials.air) || (x>0 && blockBuffer[(x-1)*ySize+y*zSize+z].material == BlockMaterials.air)){
-                        
-                        _triangles.Add(formulas[2]);
-                        _triangles.Add(formulas[0]);
-                        _triangles.Add(formulas[1]);
-  
-                        _triangles.Add(formulas[3]);
-                        _triangles.Add(formulas[2]);
-                        _triangles.Add(formulas[1]);
-                        
-                    }
-  
-                    /* FONDO */
-                    if((x==xSize-1 &&blockBuffer[x*ySize+y*zSize+z].material != BlockMaterials.air) || (x < xSize-1 && blockBuffer[(x+1)*ySize+y*zSize+z].material == BlockMaterials.air)){
-                        _triangles.Add(formulas[4]);
-                        _triangles.Add(formulas[6]);
-                        _triangles.Add(formulas[5]);
-  
-                        _triangles.Add(formulas[5]);
-                        _triangles.Add(formulas[6]);
-                        _triangles.Add(formulas[7]);
-  
-                    }
-  
-    
-                    /* PISO */
-                    if((y==0 &&blockBuffer[x*ySize+y*zSize+z].material != BlockMaterials.air)|| (y>0 && blockBuffer[x*ySize+(y-1)*zSize+z].material == BlockMaterials.air)){
-  
-                        _triangles.Add(formulas[0]);
-                        _triangles.Add(formulas[4]);
-                        _triangles.Add(formulas[5]);
-  
-                        _triangles.Add(formulas[0]);
-                        _triangles.Add(formulas[5]);
-                        _triangles.Add(formulas[1]);
-  
-                    }
-  
-  
-                    /* TECHO */
-                    if(y<ySize-1 && blockBuffer[x*ySize+(y+1)*zSize+z].material == BlockMaterials.air){
-                        _triangles.Add(formulas[7]);
-                        _triangles.Add(formulas[6]);
-                        _triangles.Add(formulas[2]);
-  
-                        _triangles.Add(formulas[7]);
-                        _triangles.Add(formulas[2]);
-                        _triangles.Add(formulas[3]);
-                    }
-  
-                    
-                    /* LATERAL */
-                    if((z==0 &&blockBuffer[x*ySize+y*zSize+z].material != BlockMaterials.air) || (z>0 && blockBuffer[x*ySize+y*zSize+z-1].material == BlockMaterials.air)){
-                        _triangles.Add(formulas[6]);
-                        _triangles.Add(formulas[4]);
-                        _triangles.Add(formulas[0]);
-  
-                        _triangles.Add(formulas[2]);
-                        _triangles.Add(formulas[6]);
-                        _triangles.Add(formulas[0]);
-                    }
-  
-  
-                    /* LATERAL2 */
-                    if((z==zSize-1 &&blockBuffer[x*ySize+y*zSize+z].material != BlockMaterials.air) || (z<zSize-1 && blockBuffer[x*ySize+y*zSize+z+1].material == BlockMaterials.air)){
-  
-                        _triangles.Add(formulas[7]);
-                        _triangles.Add(formulas[1]);
-                        _triangles.Add(formulas[5]);
-  
-                        _triangles.Add(formulas[7]);
-                        _triangles.Add(formulas[3]);
-                        _triangles.Add(formulas[1]);     
-                    }    
-    
-                    vert++;
 
-                }
+        //print(noise.GetSimplex(x, z));
+        float simplex1 = noise.GetSimplex(x*.8f, z*.8f)*10;
+        float simplex2 = noise.GetSimplex(x * 3f, z * 3f) * 10*(noise.GetSimplex(x*.3f, z*.3f)+.5f);
 
-                vert++;
+        float heightMap = simplex1 + simplex2;
 
-            }
+        //add the 2d noise to the middle of the terrain chunk
+        float baseLandHeight = ySize * .5f + heightMap;
 
-            vert += _zSize + 1;
+        //3d noise for caves and overhangs and such
+        float caveNoise1 = noise.GetPerlinFractal(x*5f, y*10f, z*5f);
+        float caveMask = noise.GetSimplex(x * .3f, z * .3f)+.3f;
 
+        //stone layer heightmap
+        float simplexStone1 = noise.GetSimplex(x * 1f, z * 1f) * 10;
+        float simplexStone2 = (noise.GetSimplex(x * 5f, z * 5f)+.5f) * 20 * (noise.GetSimplex(x * .3f, z * .3f) + .5f);
+
+        float stoneHeightMap = simplexStone1 + simplexStone2;
+        float baseStoneHeight = ySize * .25f + stoneHeightMap;
+
+
+        //float cliffThing = noise.GetSimplex(x * 1f, z * 1f, y) * 10;
+        //float cliffThingMask = noise.GetSimplex(x * .4f, z * .4f) + .3f;
+
+
+
+        BlockMaterials blockType = BlockMaterials.air;
+
+        //under the surface, dirt block
+        if(y <= baseLandHeight)
+        {
+            blockType = BlockMaterials.dirt;
+
+            //just on the surface, use a grass type
+            if(y > baseLandHeight - 1 && y > 20)
+                blockType = BlockMaterials.grass;
+
+            if(y <= baseStoneHeight)
+                blockType = BlockMaterials.stone;
         }
-  
-        return _triangles;
+
+
+        if(caveNoise1 > Mathf.Max(caveMask, .2f))
+            blockType = BlockMaterials.air;
+
+        /*if(blockType != BlockType.Air)
+            blockType = BlockType.Stone;*/
+
+        //if(blockType == BlockType.Air && noise.GetSimplex(x * 4f, y * 4f, z*4f) < 0)
+          //  blockType = BlockType.Dirt;
+
+        //if(Mathf.PerlinNoise(x * .1f, z * .1f) * 10 + y < TerrainChunk.chunkHeight * .5f)
+        //    return BlockType.Grass;
+
+        return blockType;
     }
+
+   
 
 }

@@ -8,40 +8,65 @@ using Unity.Transforms;
 using Unity.Mathematics;
 
 public class ChunkRenderer : ComponentSystem{
+    private RenderMesh importedRenderMesh;
 
-    [SerializeField] private Mesh mesh;
-    [SerializeField] private Material material;
     protected override void OnUpdate(){
 
+
         Entities.WithAll<ChunkComponent>().ForEach((entity)=>{
-
-/*             EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-
-            DynamicBuffer<Block> dynamicBuffer = entityManager.GetBuffer<Block>(entity); 
-            DynamicBuffer<Block> blockBuffer = dynamicBuffer.Reinterpret<Block>(); 
-
-            DynamicBuffer<VertexBuffer> dynamicVertexBuffer = entityManager.GetBuffer<VertexBuffer>(entity); 
-            var vertexBuffer = dynamicVertexBuffer.Reinterpret<VertexBuffer>();
-
-            List<Vector3> vertex = new List<Vector3>();
-            for (int i = 0; i < vertexBuffer.Length; i++)
-            {
-                Debug.Log(vertexBuffer[i].vertex);
-                vertex.Add(Vector3.zero);
-            } 
 
             ComponentDataFromEntity<ChunkComponent> chunkType = GetComponentDataFromEntity<ChunkComponent>(true);
 
             ChunkComponent chunk = chunkType[entity];
 
-            List<int> triangles = GenerateCubesByTriangles(chunk.xSize, chunk.ySize, chunk.zSize, blockBuffer);
+            if(chunk.hasToRender){
 
-            UpdateMesh(vertex.ToArray(),triangles.ToArray());
+                chunk.hasToRender = false;
 
-            entityManager.SetSharedComponentData(entity, new RenderMesh{
-                mesh = mesh,
-                material = material
-            }); */
+                EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+
+                DynamicBuffer<Block> dynamicBuffer = entityManager.GetBuffer<Block>(entity); 
+                DynamicBuffer<Block> blockBuffer = dynamicBuffer.Reinterpret<Block>(); 
+
+                List<int> triangles = GenerateCubesByTriangles(chunk.xSize, chunk.ySize, chunk.zSize, blockBuffer);
+                
+                DynamicBuffer<VertexBuffer> dynamicVertexBuffer = entityManager.GetBuffer<VertexBuffer>(entity); 
+
+                var vertexBuffer = dynamicVertexBuffer.Reinterpret<Vector3>();
+
+                Vector3[] vertexArr = new Vector3[vertexBuffer.Length];
+
+                for(int i=0; i<vertexBuffer.Length; i++){
+                    vertexArr[i] = vertexBuffer[i];
+                }        
+
+                importedRenderMesh = EntityManager.GetSharedComponentData<RenderMesh>(entity);
+
+                UpdateMesh(vertexArr,triangles.ToArray());
+
+                entityManager.SetSharedComponentData(entity, new RenderMesh{
+                    mesh = importedRenderMesh.mesh,
+                    material = importedRenderMesh.material
+                }); 
+                
+                entityManager.SetComponentData(entity, new RenderBounds{
+                    Value = new AABB{
+                        Center = new float3(importedRenderMesh.mesh.bounds.center.x, importedRenderMesh.mesh.bounds.center.y, importedRenderMesh.mesh.bounds.center.z),
+                        Extents = new float3(importedRenderMesh.mesh.bounds.extents.x, importedRenderMesh.mesh.bounds.extents.y, importedRenderMesh.mesh.bounds.extents.z)
+                    }
+                });
+
+                entityManager.SetComponentData(entity, new ChunkComponent{
+                    xSize = chunk.xSize,
+                    ySize = chunk.ySize,
+                    zSize = chunk.zSize,
+                    biome = chunk.biome,
+                    hasToRender = chunk.hasToRender,
+                });
+
+            }
+
+            
 
         });
         
@@ -49,11 +74,11 @@ public class ChunkRenderer : ComponentSystem{
     }
 
     void UpdateMesh(Vector3[] vertices, int[] triangles){
-        mesh.Clear();
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
+        importedRenderMesh.mesh.Clear();
+        importedRenderMesh.mesh.vertices = vertices;
+        importedRenderMesh.mesh.triangles = triangles;
+        importedRenderMesh.mesh.RecalculateNormals();
+        importedRenderMesh.mesh.RecalculateBounds();
     }
 
     List<int> GenerateCubesByTriangles(int _xSize, int _ySize, int _zSize, DynamicBuffer<Block> blockBuffer){
